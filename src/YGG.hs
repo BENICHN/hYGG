@@ -18,9 +18,11 @@ import Data.Maybe
 import Data.Aeson.Types ((.:))
 import Network.URI.Encode (encode)
 import Config
+import Data.Text (Text, unpack)
+import Network.HTTP.Types.Header
 
 yggcookieheader :: String -> Options -> Options
-yggcookieheader ck = header "Cookie" .~ ["ygg_=" <> encS ck]
+yggcookieheader ck = header hCookie .~ ["ygg_=" <> encS ck]
 
 connectCookie :: Config -> IO (Response ByteString)
 connectCookie c =
@@ -34,7 +36,7 @@ dltorrent c tid =
 
 getFiles :: Config -> Int -> IO String
 getFiles c tid = do
-  res <- (^. responseBody) <$> get (makeTorrentFilesUri c tid)
+  res <- (^. responseBody) <$> get (hostName c <> "/engine/get_files?torrent=" <> show tid)
   return $ fromMaybe "" do
       v <- JS.decode res
       parse' (v .: "html")
@@ -48,11 +50,5 @@ parseTorrentInfos c s =
     nfo <- EL.decodeUtf8 . (^. responseBody) <$> get (hostName c <> "/engine/get_nfo?torrent=" <> show tid)
     head <$> runX (getdoc url >>> selectTI (arr (const files) >>> xread >>> removeAllWhiteSpace) >>> xunpickleVal (xpTI (toStrict nfo) url tid))
 
-parseSearchTorrents :: Config -> Int -> String -> IO [TorrentFile]
-parseSearchTorrents c p q = runX $ getdoc (makeSearchURI c p q) >>> selectResultsTable >>> xunpickleVal xpTF
-
-makeSearchURI :: Config -> Int -> String -> String
-makeSearchURI c p q = hostName c <> "/engine/search?name=" <> encode q <> "&do=search" <> "&page=" <> show p
-
-makeTorrentFilesUri :: Config -> Int -> String
-makeTorrentFilesUri c tid = hostName c <> "/engine/get_files?torrent=" <> show tid
+parseSearchTorrents :: Config -> [(Text, Text)] -> IO [TorrentFile]
+parseSearchTorrents c ps = runX $ getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal xpTF

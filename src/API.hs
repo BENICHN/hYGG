@@ -15,9 +15,7 @@ import Config
 app :: Config -> API
 app c = do
   get "search" $ do
-    qm <- param "q"
-    pm <- param "p"
-    withret (\q -> liftIO (parseSearchTorrents c (fromMaybe 0 pm) q) >>= json) qm
+    params >>= liftIO . parseSearchTorrents c >>= json
   get ("torrent" <//> wildcard) $ \s -> liftIO (parseTorrentInfos c $ unpack s) >>= json
   get ("dl" <//> var) $ \stid -> do
     lbs <- liftIO $ do

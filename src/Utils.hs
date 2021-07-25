@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Utils where
 
 import Text.XML.HXT.Core
@@ -10,7 +12,12 @@ import Data.Text (pack, unpack, Text)
 import Data.ByteString (ByteString)
 import Data.Aeson.Types
 import Data.List.Extra (dropWhileEnd)
+import Data.List
 import System.Environment
+import Network.URI.Encode
+
+makeUriQuery :: [(Text, Text)] -> Text
+makeUriQuery params = mconcat . intersperse "&" $ (\(n, v) -> n <> "=" <> encodeText v) <$> params
 
 getExecutableDir :: IO FilePath
 getExecutableDir = dropWhileEnd (/='/') <$> getExecutablePath
