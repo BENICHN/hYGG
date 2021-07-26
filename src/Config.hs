@@ -11,6 +11,7 @@ import Network.HTTP.Types.Header
 import Utils
 
 data Config = Config {
+  port :: Int,
   hostName :: String,
   yggid :: String,
   yggpass :: String,

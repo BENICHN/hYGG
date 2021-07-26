@@ -23,6 +23,7 @@ data TorrentFile = TorrentFile {
   fileinfo :: File,
   cat :: Int,
   torurl :: String,
+  torurlend :: String,
   tid :: Int,
   coms :: Maybe Int,
   age :: String,
@@ -32,17 +33,16 @@ data TorrentFile = TorrentFile {
 data Uploader = Uploader {
   upurl :: String,
   upname :: String }
-  | Anonymous
   deriving (Generic, Eq, Ord, Show)
 
 data TorrentInfo = TorrentInfo {
   baseinfo :: TorrentFile,
   hash :: String,
   content :: [File],
-  nfo :: Text,
-  uploader :: Uploader,
+  nfo :: String,
+  uploader :: Maybe Uploader,
   date :: String,
-  presentation :: Text,
+  presentation :: String,
   commentaries :: [Commentary] }
   deriving (Generic, Eq, Ord, Show)
 

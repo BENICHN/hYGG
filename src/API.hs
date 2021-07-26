@@ -11,6 +11,7 @@ import Data.Maybe
 import Data.Text (pack, unpack)
 import Network.Wai
 import Config
+import Web.Spock.Config
 
 app :: Config -> API
 app c = do
@@ -25,3 +26,9 @@ app c = do
     name <- param "name"
     setHeader "Content-Disposition" ("inline; filename=\"" <> fromMaybe (pack stid) name <> ".torrent\"")
     response (\s h -> responseLBS s h lbs)
+
+runAPI :: FilePath -> IO ()
+runAPI fp = do
+  c <- fromJust <$> getConfig fp
+  spockCfg <- defaultSpockCfg () PCNoDatabase ()
+  runSpock (port c) $ spock spockCfg $ app c

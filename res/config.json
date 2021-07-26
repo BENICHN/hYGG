@@ -1,4 +1,5 @@
 {
+    "port": 8080,
     "hostName": "https://www4.yggtorrent.li",
     "yggid": "",
     "yggpass": "",

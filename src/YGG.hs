@@ -18,8 +18,9 @@ import Data.Maybe
 import Data.Aeson.Types ((.:))
 import Network.URI.Encode (encode)
 import Config
-import Data.Text (Text, unpack)
+import Data.Text (Text, unpack, pack)
 import Network.HTTP.Types.Header
+import qualified Data.ByteString.Lazy.Char8 as C8
 
 yggcookieheader :: String -> Options -> Options
 yggcookieheader ck = header hCookie .~ ["ygg_=" <> encS ck]
@@ -47,8 +48,9 @@ parseTorrentInfos c s =
       url = hostName c <> "/torrent/" <> s
   in do
     files <- getFiles c tid
-    nfo <- EL.decodeUtf8 . (^. responseBody) <$> get (hostName c <> "/engine/get_nfo?torrent=" <> show tid)
-    head <$> runX (getdoc url >>> selectTI (arr (const files) >>> xread >>> removeAllWhiteSpace) >>> xunpickleVal (xpTI (toStrict nfo) url tid))
+    nfo <- C8.unpack . (^. responseBody) <$> get (hostName c <> "/engine/get_nfo?torrent=" <> show tid)
+    let filesarr = ac files >>> readFromString [withParseHTML True] >>> removeAllWhiteSpace
+    head <$> runX (getdoc url >>> selectTI filesarr >>> xunpickleVal (xpTI c nfo url tid))
 
 parseSearchTorrents :: Config -> [(Text, Text)] -> IO [TorrentFile]
-parseSearchTorrents c ps = runX $ getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal xpTF
+parseSearchTorrents c ps = runX $ getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c)

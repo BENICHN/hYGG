@@ -15,6 +15,10 @@ import Data.List.Extra (dropWhileEnd)
 import Data.List
 import System.Environment
 import Network.URI.Encode
+import Control.Arrow
+
+ac :: Arrow a => c -> a b c
+ac = arr . const
 
 makeUriQuery :: [(Text, Text)] -> Text
 makeUriQuery params = mconcat . intersperse "&" $ (\(n, v) -> n <> "=" <> encodeText v) <$> params
