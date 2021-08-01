@@ -13,14 +13,19 @@ data SLC = SLC {
   leechers :: Int,
   compl :: Int }
   deriving (Generic, Eq, Ord, Show)
+
+data FileTree = File FileInfo | Directory {
+  dirname :: String,
+  dircontent :: [FileTree] }
+  deriving (Generic, Eq, Ord, Show)
   
-data File = File {
+data FileInfo = FileInfo {
   name :: String,
   size :: String }
   deriving (Generic, Eq, Ord, Show)
 
 data TorrentFile = TorrentFile {
-  fileinfo :: File,
+  fileinfo :: FileInfo,
   cat :: Int,
   torurl :: String,
   torurlend :: String,
@@ -38,7 +43,7 @@ data Uploader = Uploader {
 data TorrentInfo = TorrentInfo {
   baseinfo :: TorrentFile,
   hash :: String,
-  content :: [File],
+  content :: [FileTree],
   nfo :: String,
   uploader :: Maybe Uploader,
   date :: String,
@@ -58,7 +63,7 @@ data User = User {
 data Commentary = Commentary {
   user :: User,
   comage :: String,
-  comcontent :: Text }
+  comcontent :: String }
   deriving (Generic, Eq, Ord, Show)
 
 instance ToJSON SLC
@@ -69,8 +74,10 @@ instance ToJSON User
 instance FromJSON User
 instance ToJSON Commentary
 instance FromJSON Commentary
-instance ToJSON File
-instance FromJSON File
+instance ToJSON FileInfo
+instance FromJSON FileInfo
+instance ToJSON FileTree
+instance FromJSON FileTree
 instance ToJSON TorrentFile
 instance FromJSON TorrentFile
 instance ToJSON TorrentInfo

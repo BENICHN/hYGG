@@ -5,6 +5,7 @@ module ScrapHTML where
 
 import Data.Bits (Bits (xor))
 import Data.Char (chr)
+import Data.List
 import Data.List.Extra (dropEnd, takeEnd, takeWhileEnd, trim)
 import Data.List.Split (chunksOf)
 import Data.Text (Text, pack)
@@ -33,7 +34,7 @@ xpTF :: Config -> PU TorrentFile
 xpTF c =
     xpElem "tr" $
       xpWrapU (\(cat, (url, name), tid, coms, age, size, compl, seeders, leechers) ->
-        TorrentFile {fileinfo=File {name=trim name, size=size}, cat=cat, torurl=url, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
+        TorrentFile {fileinfo=FileInfo {name=trim name, size=size}, cat=cat, torurl=url, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
         xp9Tuple
           (xpElem "td" $ xpFilterCont (hasName "div") $ xpElem' "div" xpRS) -- Section
           (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) xpText) -- URL & nom
@@ -49,6 +50,15 @@ xpTF c =
 
 gettorurlend :: Config -> String -> String
 gettorurlend c = drop $ length (hostName c) + length "/torrent"
+
+makefiletree :: [(String, FilePath)] -> [FileTree]
+makefiletree files =
+  let psfiles = second (break (=='/')) <$> files
+      (psfilesf, psfilesd) = partition (null . snd . snd) psfiles
+      dirs = (\files@((_, (p, _)):_) -> (p, (\(size, (_, s)) -> (size, tail s)) <$> files)) <$> groupBy (\(_, (p1, _)) (_, (p2, _)) -> p1 == p2) psfilesd
+      filestree = (\(size, (name, _)) -> File $ FileInfo {name=name, size=size}) <$> psfilesf
+      dirstree = (\(p, f) -> Directory {dirname=p, dircontent=makefiletree f}) <$> dirs
+  in filestree ++ dirstree
 
 selectTI :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
 selectTI files =
@@ -74,7 +84,7 @@ xpTI c nfo url tid =
     let fullpres = runLA $ root [] [ mkelem "html" [] [
          ac header,
          mkelem "body" [] [ ac presentation ] ] ] >>> writeDocumentToString [withOutputHTML]
-    in TorrentInfo {baseinfo=TorrentFile {fileinfo=File {name=name, size=size}, cat=cat, torurl=url, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, presentation=mconcat $ fullpres (), commentaries=coms}) $
+    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurl=url, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, presentation=mconcat $ fullpres (), commentaries=coms}) $
     xp11Tuple
       xpSLC
       xpName
@@ -98,11 +108,11 @@ xpTI c nfo url tid =
       Nothing -> 0
       Just _ -> 1) [xpWrapU (const Nothing) xpText, xpWrapU (\(url, name) -> Just $ Uploader {upurl=url, upname=name}) $ xpAttr1Elem "a" ("href", xpText) xpText]
     xpDate = xpElem "td" $ xpPair xpText (xpElem "i" xpText)
-    xpFile = xpWrapU (\(size, name) -> File {name=name, size=size}) $ xpElem "tr" $ xpPair (xpElem' "td" xpText) (xpElem' "td" xpText)
-    xpFiles = xpElem' "tbody" $ xpList xpFile
+    xpFile = xpElem "tr" $ xpPair (xpElem' "td" xpText) (xpElem' "td" xpText)
+    xpFiles = xpElem' "tbody" $ xpWrapU makefiletree $ xpList xpFile
     xpPres = xpElem' "section" xpTree
     xpCom = xpWrapU (\((avatar, role, (url, name), (up, down)), (age, content)) ->
-      Commentary {user=User {userurl=url, avatarurl=avatar, username=name, role=role, upsize=up, downsize=down}, comage=age, comcontent=pack content}) $
+      Commentary {user=User {userurl=url, avatarurl=avatar, username=name, role=role, upsize=up, downsize=down}, comage=age, comcontent=content}) $
       xpFilterCont (changeChildren (take 2)) $ xpElem' "li" $ xpPair
       (xpElem' "div" $ xp4Tuple
         (xpElem' "a" $ xpAttr1"img" ("src", xpText))
