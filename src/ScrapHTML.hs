@@ -132,7 +132,7 @@ decodeMail s =
    in decode $ chr . xor a <$> is
 
 decodeMails :: ArrowXml a => a XmlTree XmlTree
-decodeMails = processTopDown $ (getAttrValue "data-cfemail" >>> arr decodeMail >>> mkText) `when` (isElem >>> hasAttrValue "class" (=="__cf_email__"))
+decodeMails = processTopDown $ (getAttrValue "data-cfemail" >>> decodeMail ^>> mkText) `when` (isElem >>> hasAttrValue "class" (=="__cf_email__"))
 
 {- xpMail :: PU String
 xpMail =
