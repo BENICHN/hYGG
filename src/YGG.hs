@@ -52,5 +52,5 @@ parseTorrentInfos c s =
     let filesarr = ac files >>> readFromString [withParseHTML True] >>> removeAllWhiteSpace
     head <$> runX (getdoc url >>> selectTI filesarr >>> xunpickleVal (xpTI c nfo url tid))
 
-parseSearchTorrents :: Config -> [(Text, Text)] -> IO [TorrentFile]
-parseSearchTorrents c ps = runX $ getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c)
+parseSearchTorrents :: Config -> [(Text, Text)] -> IO SearchResult
+parseSearchTorrents c ps = head <$> runX (getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c))

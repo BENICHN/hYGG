@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module ScrapHTML where
 
@@ -7,7 +8,7 @@ import Data.Bits (Bits (xor))
 import Data.Char (chr)
 import Data.List
 import Data.List.Extra (dropEnd, takeEnd, takeWhileEnd, trim)
-import Data.List.Split (chunksOf)
+import Data.List.Split (chunksOf, startsWith)
 import Data.Text (Text, pack)
 import Network.URI.Encode (decode)
 import Numeric (readHex)
@@ -23,33 +24,42 @@ getdoc url = readDocument [withCurl [], withParseHTML True] url >>> removeAllWhi
 
 {-================================= Search =================================-}
 
-selectResultsTable :: ArrowXml a => a XmlTree XmlTree
-selectResultsTable = deep $
-      hasName "table"
-  >>> hasAttrValue "class" (== "table")
-  >>> getChildreni (==1)
-  >>> getChildren
+readCat :: Int -> TorCat
+readCat ic =
+  let icr = if ic > 2188 then ic - 2148 else ic - 2147
+  in toEnum icr
 
-xpTF :: Config -> PU TorrentFile
+selectResultsTable :: ArrowXml a => a XmlTree XmlTree
+selectResultsTable = mkelem "div" [] [ deep $
+      hasName "main" >>> getChildreni (==0) >>> getChildren >>> processChildren (hasName "section") >>> (
+        (getChildreni (==1) >>> processChildren (hasAttrValue "class" (=="pagination")) >>> changeChildren (\case
+          [] -> runLA mkText "none"
+          [ch] -> runLA (changeChildren (takeEnd 1) >>> getChildren >>> getChildren >>> getChildren) ch) >>> getChildren)
+        <+> (getChildren >>> hasAttrValue "id" (=="#torrents") >>> getChildreni (==1) >>> getChildren >>> getChildreni (==1))) ]
+
+xpTF :: Config -> PU SearchResult 
 xpTF c =
-    xpElem "tr" $
-      xpWrapU (\(cat, (url, name), tid, coms, age, size, compl, seeders, leechers) ->
-        TorrentFile {fileinfo=FileInfo {name=trim name, size=size}, cat=cat, torurl=url, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
-        xp9Tuple
-          (xpElem "td" $ xpFilterCont (hasName "div") $ xpElem' "div" xpRS) -- Section
-          (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) xpText) -- URL & nom
-          (xpElem "td" $ xpAttr1 "a" ("target", xpRS)) -- NFO
-          (xpElem "td" $ xpFilterCont isText xpRS) -- Comments
-          (xpElem "td" $ xpFilterCont isText xpText) -- Age
-          (xpElem "td" xpText) -- Taille
-          (xpElem "td" xpRS) -- Compl
-          (xpElem "td" xpRS) -- Seed
-          (xpElem "td" xpRS) -- Leech
+  xpWrapU (\(s, res) -> SearchResult {endOfSearch=not $ "suivante" `isPrefixOf` s || "dernière" `isPrefixOf` s, searchResults=res}) $
+    xpElem "div" $ xpPair xpText $
+      xpElem "tbody" $ xpList $
+        xpWrapU (\(cat, (url, name), tid, coms, age, size, compl, seeders, leechers) ->
+          TorrentFile {fileinfo=FileInfo {name=trim name, size=size}, cat=readCat cat, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
+          xpElem "tr" $
+            xp9Tuple
+              (xpElem "td" $ xpFilterCont (hasName "div") $ xpElem' "div" xpRS) -- Section
+              (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) xpText) -- URL & nom
+              (xpElem "td" $ xpAttr1 "a" ("target", xpRS)) -- NFO
+              (xpElem "td" $ xpFilterCont isText xpRS) -- Comments
+              (xpElem "td" $ xpFilterCont isText xpText) -- Age
+              (xpElem "td" xpText) -- Taille
+              (xpElem "td" xpRS) -- Compl
+              (xpElem "td" xpRS) -- Seed
+              (xpElem "td" xpRS) -- Leech
 
 {-================================= TorrentInfos =================================-}
 
 gettorurlend :: Config -> String -> String
-gettorurlend c = drop $ length (hostName c) + length "/torrent"
+gettorurlend c = drop $ length (hostName c)
 
 makefiletree :: [(String, FilePath)] -> [FileTree]
 makefiletree files =
@@ -84,7 +94,7 @@ xpTI c nfo url tid =
     let fullpres = runLA $ root [] [ mkelem "html" [] [
          ac header,
          mkelem "body" [] [ ac presentation ] ] ] >>> writeDocumentToString [withOutputHTML]
-    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurl=url, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, presentation=mconcat $ fullpres (), commentaries=coms}) $
+    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, presentation=mconcat $ fullpres (), commentaries=coms}) $
     xp11Tuple
       xpSLC
       xpName
@@ -101,7 +111,7 @@ xpTI c nfo url tid =
     xpSoLoC = xpElem' "strong" $ xpWrapU (read . filter (/=' ')) xpText
     xpSLC = xpWrapU (\(s, l, c) -> SLC {seeders=s, leechers=l, compl=c}) $ xpTriple xpSoLoC xpSoLoC xpSoLoC
     xpName = xpElem "td" xpText
-    xpCat = xpWrapU (read . takeWhileEnd (/='=')) $ xpElem "td" $ xpAttr1 "a" ("href", xpText)
+    xpCat = xpWrapU (readCat . read . takeWhileEnd (/='=')) $ xpElem "td" $ xpAttr1 "a" ("href", xpText)
     xpSize = xpElem "td" xpText
     xpHash = xpElem "td" xpText
     xpUploader = xpElem "td" $ xpAlt (\case

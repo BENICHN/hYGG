@@ -8,6 +8,60 @@ import Data.Text (Text, pack)
 import GHC.Generics
 import Web.Spock
 
+data TorCat =
+    Karaoke -- 2147
+  | Musique
+  | Sample
+  | PodcastRadio
+  
+  | AudioBook -- 2151
+  | BD
+  | Comics
+  | Livre
+  | Manga
+  | Presse
+
+  | Emulateur -- 2157
+  | ROM
+
+  | VGLinux -- 2159
+  | VGMacOS
+  | VGWindows
+  | VGMicrosoft
+  | VGNintendo
+  | VGSony
+  | VGSPhone
+  | VGTablette
+  | VGAutre
+
+  | MapApp -- 2168
+  | MapCarte
+  | MapDivers
+
+  | PGLinux -- 2171
+  | PGMacOS
+  | PGWindows
+  | PGSPhone
+  | PGTablette
+  | Formation
+  | PGAutre
+
+  | Animation -- 2178
+  | AnimationSerie
+  | Concert
+  | Documentaire
+  | Emission
+  | Film
+  | Serie
+  | Spectacle
+  | Sport
+  | VideoClip
+
+  | XXFilm -- /!\ 2189
+  | XXHentai
+  | XXImages
+  deriving (Generic, Enum, Eq, Ord, Show)
+
 data SLC = SLC {
   seeders :: Int,
   leechers :: Int,
@@ -26,8 +80,7 @@ data FileInfo = FileInfo {
 
 data TorrentFile = TorrentFile {
   fileinfo :: FileInfo,
-  cat :: Int,
-  torurl :: String,
+  cat :: TorCat,
   torurlend :: String,
   tid :: Int,
   coms :: Maybe Int,
@@ -66,6 +119,13 @@ data Commentary = Commentary {
   comcontent :: String }
   deriving (Generic, Eq, Ord, Show)
 
+data SearchResult = SearchResult {
+  endOfSearch :: Bool,
+  searchResults :: [TorrentFile] }
+  deriving (Generic, Eq, Ord, Show)
+
+instance ToJSON TorCat
+instance FromJSON TorCat
 instance ToJSON SLC
 instance FromJSON SLC
 instance ToJSON Uploader
@@ -80,6 +140,8 @@ instance ToJSON FileTree
 instance FromJSON FileTree
 instance ToJSON TorrentFile
 instance FromJSON TorrentFile
+instance ToJSON SearchResult
+instance FromJSON SearchResult
 instance ToJSON TorrentInfo
 instance FromJSON TorrentInfo
 
