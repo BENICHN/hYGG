@@ -111,7 +111,7 @@ xpTI c nfo url tid =
   where
     xpSoLoC = xpElem' "strong" $ xpWrapU (read . filter (/=' ')) xpText
     xpSLC = xpWrapU (\(s, l, c) -> SLC {seeders=s, leechers=l, compl=c}) $ xpTriple xpSoLoC xpSoLoC xpSoLoC
-    xpName = xpElem "td" xpText
+    xpName = xpElem "td" $ xps xpText
     xpCat = xpWrapU (readCat . read . takeWhileEnd (/='=')) $ xpElem "td" $ xpAttr1 "a" ("href", xpText)
     xpSize = xpElem "td" xpText
     xpHash = xpElem "td" xpText
