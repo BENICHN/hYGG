@@ -68,7 +68,7 @@ makefiletree files =
       dirs = (\files@((_, (p, _)):_) -> (p, (\(size, (_, s)) -> (size, tail s)) <$> files)) <$> groupBy' (fst . snd) psfilesd
       filestree = (\(size, (name, _)) -> File $ FileInfo {name=name, size=size}) <$> psfilesf
       dirstree = (\(p, f) -> Directory {dirname=p, dircontent=makefiletree f}) <$> dirs
-  in filestree ++ dirstree
+  in dirstree ++ filestree
 
 selectTI :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
 selectTI files =
