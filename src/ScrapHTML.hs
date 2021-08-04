@@ -90,11 +90,12 @@ selectTI files =
 
 xpTI :: Config -> String -> String -> Int -> PU TorrentInfo
 xpTI c nfo url tid =
-  xpWrapU (\(slc, name, cat, size, hash, uploader, (date, age), presentation, coms, files, header) ->
+  xpWrapU (\(slc, name, cat, size, hash, uploader, (dh, age), presentation, coms, files, header) ->
     let fullpres = runLA $ root [] [ mkelem "html" [] [
          ac header,
          mkelem "body" [] [ ac presentation ] ] ] >>> writeDocumentToString [withOutputHTML]
-    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=trim date, presentation=mconcat $ fullpres (), commentaries=coms}) $
+        [date, hour] = words . trim $ dh
+    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=drop 1 . dropEnd 2 $ age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, hour=hour, presentation=mconcat $ fullpres (), commentaries=coms}) $
     xp11Tuple
       xpSLC
       xpName

@@ -100,6 +100,7 @@ data TorrentInfo = TorrentInfo {
   nfo :: String,
   uploader :: Maybe Uploader,
   date :: String,
+  hour :: String,
   presentation :: String,
   commentaries :: [Commentary] }
   deriving (Generic, Eq, Ord, Show)
