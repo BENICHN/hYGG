@@ -94,7 +94,7 @@ xpTI c nfo url tid =
     let fullpres = runLA $ root [] [ mkelem "html" [] [
          ac header,
          mkelem "body" [] [ ac presentation ] ] ] >>> writeDocumentToString [withOutputHTML]
-    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, presentation=mconcat $ fullpres (), commentaries=coms}) $
+    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=trim date, presentation=mconcat $ fullpres (), commentaries=coms}) $
     xp11Tuple
       xpSLC
       xpName
