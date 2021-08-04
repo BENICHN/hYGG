@@ -47,7 +47,7 @@ xpTF c =
           xpElem "tr" $
             xp9Tuple
               (xpElem "td" $ xpFilterCont (hasName "div") $ xpElem' "div" xpRS) -- Section
-              (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) xpText) -- URL & nom
+              (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) (xps xpText)) -- URL & nom
               (xpElem "td" $ xpAttr1 "a" ("target", xpRS)) -- NFO
               (xpElem "td" $ xpFilterCont isText xpRS) -- Comments
               (xpElem "td" $ xpFilterCont isText xpText) -- Age

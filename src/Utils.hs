@@ -17,6 +17,9 @@ import System.Environment
 import Network.URI.Encode
 import Control.Arrow
 
+xps :: Monoid m => PU m -> PU m
+xps pu = xpWrap (mconcat, (:[])) $ xpList pu
+
 groupBy' :: Ord a => (t -> a) -> [t] -> [[t]]
 groupBy' p = groupBy (\o1 o2 -> p o1 == p o2) . sortBy (\o1 o2 -> compare (p o1) (p o2))
 
