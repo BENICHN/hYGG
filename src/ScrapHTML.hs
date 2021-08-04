@@ -65,7 +65,7 @@ makefiletree :: [(String, FilePath)] -> [FileTree]
 makefiletree files =
   let psfiles = second (break (=='/')) <$> files
       (psfilesf, psfilesd) = partition (null . snd . snd) psfiles
-      dirs = (\files@((_, (p, _)):_) -> (p, (\(size, (_, s)) -> (size, tail s)) <$> files)) <$> groupBy (\(_, (p1, _)) (_, (p2, _)) -> p1 == p2) psfilesd
+      dirs = (\files@((_, (p, _)):_) -> (p, (\(size, (_, s)) -> (size, tail s)) <$> files)) <$> groupBy' (fst . snd) psfilesd
       filestree = (\(size, (name, _)) -> File $ FileInfo {name=name, size=size}) <$> psfilesf
       dirstree = (\(p, f) -> Directory {dirname=p, dircontent=makefiletree f}) <$> dirs
   in filestree ++ dirstree

@@ -17,6 +17,9 @@ import System.Environment
 import Network.URI.Encode
 import Control.Arrow
 
+groupBy' :: Ord a => (t -> a) -> [t] -> [[t]]
+groupBy' p = groupBy (\o1 o2 -> p o1 == p o2) . sortBy (\o1 o2 -> compare (p o1) (p o2))
+
 ac :: Arrow a => c -> a b c
 ac = arr . const
 
