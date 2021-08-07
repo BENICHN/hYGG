@@ -7,10 +7,10 @@ import Paths_hYGG
 import Config
 import Utils
 
-c = Config {port=8080, hostName="https://www4.yggtorrent.li", yggid="", yggpass="", yggcookie=""}
+c = Config {port=8080, hostName="https://www3.yggtorrent.nz", yggid="", yggpass="", yggcookie=""}
 
-exSearchurl = "https://www4.yggtorrent.li/engine/search?name=luca&do=search&order=asc&sort=name&page=50"
-exTIurl = "https://www4.yggtorrent.li/torrent/audio/musique/496268-andy+y+lucas+discography+albums+2003+2018+mp3+320+freek911"
+exSearchurl = "https://www3.yggtorrent.nz/engine/search?name=luca&do=search&order=asc&sort=name&page=50"
+exTIurl = "https://www3.yggtorrent.nz/torrent/audio/musique/496268-andy+y+lucas+discography+albums+2003+2018+mp3+320+freek911"
 
 testConfig =
      setDefaultCookie c >>= print
