@@ -95,7 +95,7 @@ xpTI c nfo url tid =
          ac header,
          mkelem "body" [] [ ac presentation ] ] ] >>> writeDocumentToString [withOutputHTML]
         [date, hour] = words . trim $ dh
-    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=drop 1 . dropEnd 2 $ age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, hour=hour, presentation=mconcat $ fullpres (), commentaries=coms}) $
+    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=drop 1 . dropEnd 1 . trim $ age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, hour=hour, presentation=mconcat $ fullpres (), commentaries=coms}) $
     xp11Tuple
       xpSLC
       xpName
