@@ -5,7 +5,7 @@
 module ScrapHTML where
 
 import Data.Bits (Bits (xor))
-import Data.Char (chr)
+import Data.Char (chr, isDigit)
 import Data.List
 import Data.List.Extra (dropEnd, takeEnd, takeWhileEnd, trim)
 import Data.List.Split (chunksOf, startsWith)
@@ -23,6 +23,18 @@ getdoc :: String -> IOStateArrow () XmlTree XmlTree
 getdoc url = readDocument [withCurl [], withParseHTML True] url >>> removeAllWhiteSpace >>> decodeMails
 
 {-================================= Search =================================-}
+
+parseSize :: String -> Integer
+parseSize s =
+  let (v, u) = span (\c -> isDigit c || c == '.') s
+      vn = readR v :: Rational
+      um = case u of
+        "o" -> 1
+        "ko" -> 1000
+        "Mo" -> 1000000
+        "Go" -> 1000000000
+        "To" -> 1000000000000
+   in floor $ vn * um
 
 readCat :: Int -> TorCat
 readCat ic =
@@ -43,7 +55,7 @@ xpTF c =
     xpElem "div" $ xpPair xpText $
       xpElem "tbody" $ xpList $
         xpWrapU (\(cat, (url, name), tid, coms, age, size, compl, seeders, leechers) ->
-          TorrentFile {fileinfo=FileInfo {name=trim name, size=size}, cat=readCat cat, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
+          TorrentFile {fileinfo=FileInfo {name=trim name, size=parseSize size}, cat=readCat cat, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
           xpElem "tr" $
             xp9Tuple
               (xpElem "td" $ xpFilterCont (hasName "div") $ xpElem' "div" xpRS) -- Section
@@ -66,7 +78,7 @@ makefiletree files =
   let psfiles = second (break (=='/')) <$> files
       (psfilesf, psfilesd) = partition (null . snd . snd) psfiles
       dirs = (\files@((_, (p, _)):_) -> (p, (\(size, (_, s)) -> (size, tail s)) <$> files)) <$> groupBy' (fst . snd) psfilesd
-      filestree = (\(size, (name, _)) -> File $ FileInfo {name=name, size=size}) <$> psfilesf
+      filestree = (\(size, (name, _)) -> File $ FileInfo {name=name, size=parseSize size}) <$> psfilesf
       dirstree = (\(p, f) -> Directory {dirname=p, dircontent=makefiletree f}) <$> dirs
   in dirstree ++ filestree
 
@@ -96,7 +108,7 @@ xpTI c nfo url tid =
          ac header >>> getChildren,
          ac presentation ] -} ac presentation >>> processTopDownWithAttrl (changeAttrValue (hostName c ++) `when` (isAttr >>> hasName "href"))] >>> writeDocumentToString [withOutputHTML]
         [date, hour] = words . trim $ dh
-    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=drop 1 . dropEnd 1 . trim $ age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, hour=hour, presentation=mconcat $ fullpres (), comments=coms}) $
+    in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=parseSize size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=drop 1 . dropEnd 1 . trim $ age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, hour=hour, presentation=mconcat $ fullpres (), comments=coms}) $
     xp11Tuple
       xpSLC
       xpName
@@ -124,7 +136,7 @@ xpTI c nfo url tid =
     xpFiles = xpElem' "tbody" $ xpWrapU makefiletree $ xpList xpFile
     xpPres = xpElem' "section" xpTree
     xpCom = xpWrapU (\((avatar, role, (url, name), (up, down)), (age, content)) ->
-      Commentary {user=User {userurl=url, avatarurl=avatar, username=name, role=role, upsize=up, downsize=down}, comage=age, comcontent=content}) $
+      Commentary {user=User {userurl=url, avatarurl=avatar, username=name, role=role, upsize=parseSize up, downsize=parseSize down}, comage=age, comcontent=content}) $
       xpFilterCont (changeChildren (take 2)) $ xpElem' "li" $ xpPair
       (xpElem' "div" $ xp4Tuple
         (xpElem' "a" $ xpAttr1"img" ("src", xpText))

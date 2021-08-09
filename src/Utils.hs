@@ -16,6 +16,15 @@ import Data.List
 import System.Environment
 import Network.URI.Encode
 import Control.Arrow
+import Data.Ratio
+
+readR :: String -> Ratio Integer
+readR s =
+  let (i, d) = break (=='.') s
+      dd = drop 1 d
+      dn = if null dd then 1 else read dd
+      m = 10 ^ length dd
+   in (read i * m + dn) % m
 
 xps :: Monoid m => PU m -> PU m
 xps pu = xpWrap (mconcat, (:[])) $ xpList pu

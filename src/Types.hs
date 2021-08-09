@@ -75,7 +75,7 @@ data FileTree = File FileInfo | Directory {
   
 data FileInfo = FileInfo {
   name :: String,
-  size :: String }
+  size :: Integer }
   deriving (Generic, Eq, Ord, Show)
 
 data TorrentFile = TorrentFile {
@@ -110,8 +110,8 @@ data User = User {
   avatarurl :: String,
   username :: String,
   role :: String,
-  upsize :: String,
-  downsize :: String }
+  upsize :: Integer,
+  downsize :: Integer }
   deriving (Generic, Eq, Ord, Show)
 
 data Commentary = Commentary {
