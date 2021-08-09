@@ -18,6 +18,7 @@ decoResp = (setHeader "Access-Control-Allow-Origin" "*" >>)
 
 app :: Config -> API
 app c = do
+  get "ping" $ decoResp $ text "pong"
   get "search" $ decoResp $ do
     params >>= liftIO . parseSearchTorrents c >>= json
   get ("torrent" <//> wildcard) $ \s -> decoResp $ liftIO (parseTorrentInfos c $ unpack s) >>= json
