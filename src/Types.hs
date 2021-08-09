@@ -102,7 +102,7 @@ data TorrentInfo = TorrentInfo {
   date :: String,
   hour :: String,
   presentation :: String,
-  commentaries :: [Commentary] }
+  comments :: [Commentary] }
   deriving (Generic, Eq, Ord, Show)
 
 data User = User {
