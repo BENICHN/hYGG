@@ -13,7 +13,7 @@ import Network.Wai
 import Config
 import Web.Spock.Config
 
-decoResp :: ActionCtxT ctx (WebStateM () () ()) b -> ActionCtxT ctx (WebStateM () () ()) b
+decoResp :: Action b -> Action b
 decoResp = (setHeader "Access-Control-Allow-Origin" "*" >>)
 
 app :: Config -> API
@@ -21,8 +21,8 @@ app c = do
   get "ping" $ decoResp $ text "pong"
   get "config" $ decoResp $ json c
   get "search" $ decoResp $ do
-    params >>= liftIO . parseSearchTorrents c >>= json
-  get ("torrent" <//> wildcard) $ \s -> decoResp $ liftIO (parseTorrentInfos c $ unpack s) >>= json
+    params >>= liftIO . parseSearchTorrents c >>= witherr' json
+  get ("torrent" <//> wildcard) $ \s -> decoResp $ liftIO (parseTorrentInfos c $ unpack s) >>= witherr' json
   get ("dl" <//> var) $ \stid -> decoResp $ do
     lbs <- liftIO $ do
       connectCookie c

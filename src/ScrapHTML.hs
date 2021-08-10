@@ -18,6 +18,7 @@ import qualified Text.XML.HXT.DOM.XmlNode as XN
 import Types
 import Utils
 import Config
+import Data.Maybe
 
 getdoc :: String -> IOStateArrow () XmlTree XmlTree
 getdoc url = readDocument [withCurl [], withParseHTML True] url >>> removeAllWhiteSpace >>> decodeMails
@@ -43,17 +44,18 @@ readCat ic =
 
 selectResultsTable :: ArrowXml a => a XmlTree XmlTree
 selectResultsTable = mkelem "div" [] [ deep $
-      hasName "main" >>> getChildreni (==0) >>> getChildren >>> processChildren (hasName "section") >>> (
-        (getChildreni (==1) >>> processChildren (hasAttrValue "class" (=="pagination")) >>> changeChildren (\case
-          [] -> runLA mkText "none"
-          [ch] -> runLA (changeChildren (takeEnd 1) >>> getChildren >>> getChildren >>> getChildren) ch) >>> getChildren)
-        <+> (getChildren >>> hasAttrValue "id" (=="#torrents") >>> getChildreni (==1) >>> getChildren >>> getChildreni (==1))) ]
+      hasName "main" >>> getChildreni (==0) /> processChildren (hasName "section") >>> (
+            (getChildreni (==1) /> hasAttrValue "class" (=="pagination") >>> changeChildren (takeEnd 1) /> getChildren >>> getChildren)
+        <+> (getChildren >>> hasAttrValue "id" (=="#torrents") >>> getChildreni (==1) /> getChildreni (==1)) ) ]
 
 xpTF :: Config -> PU SearchResult 
 xpTF c =
-  xpWrapU (\(s, res) -> SearchResult {endOfSearch=not $ "suivante" `isPrefixOf` s || "dernière" `isPrefixOf` s, searchResults=res}) $
-    xpElem "div" $ xpPair xpText $
-      xpElem "tbody" $ xpList $
+  xpWrapU (\(sm, resm) ->
+    let eos = maybe True (\s -> not $ "suivante" `isPrefixOf` s || "dernière" `isPrefixOf` s) sm
+        res = fromMaybe [] resm
+     in SearchResult {endOfSearch=eos, searchResults=res}) $
+    xpElem "div" $ xpPair (xpOption xpText) $
+      xpOption $ xpElem "tbody" $ xpList $
         xpWrapU (\(cat, (url, name), tid, coms, age, size, compl, seeders, leechers) ->
           TorrentFile {fileinfo=FileInfo {name=trim name, size=parseSize size}, cat=readCat cat, torurlend=gettorurlend c url, tid=tid, coms=Just coms, age=trim age, slc=SLC {compl=compl, seeders=seeders, leechers=leechers}}) $
           xpElem "tr" $
@@ -88,15 +90,15 @@ selectTI files =
     []
     [
       deep (
-        hasName "main" >>> getChildren >>> getChildreni (== 1) >>> processChildren (hasName "section")
-          >>> ( (getChildreni (== 0) >>> getChildreni (== 1) >>> getChildren >>> getChildren >>> changeChildren (takeEnd 2 . dropEnd 1)
+        hasName "main" /> getChildreni (== 1) >>> processChildren (hasName "section")
+          >>> ( (getChildreni (== 0) >>> getChildreni (== 1) /> getChildren >>> changeChildren (takeEnd 2 . dropEnd 1)
                   >>> ( (getChildreni (== 0) >>> getChildreni odd >>> getChildren)
-                          <+> (getChildreni (== 1) >>> getChildreni (== 1) >>> getChildreni (== 1) >>> getChildren >>> getChildren >>> getChildren >>> getChildreni (/= 1) >>> getChildreni (== 1))
+                          <+> (getChildreni (== 1) >>> getChildreni (== 1) >>> getChildreni (== 1) /> getChildren /> getChildreni (/= 1) >>> getChildreni (== 1))
                       )) -- Infos
                   <+> (getChildreni (== 1) >>> changeChildreni (== 2)) -- Presentation
-                  <+> (getChildreni (== 3) >>> getChildren >>> getChildren >>> hasName "ul") -- Comments
+                  <+> (getChildreni (== 3) /> getChildren >>> hasName "ul") -- Comments
               ))
-          <+> (files >>> getChildren >>> getChildren) -- Content
+          <+> (files /> getChildren) -- Content
           <+> (getChildren >>> hasName "html" /> hasName "head" >>> processChildren (filterA (getName >>> isA (/="script")))) -- Head
     ]
 

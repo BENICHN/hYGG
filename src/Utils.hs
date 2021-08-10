@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Utils where
 
@@ -17,6 +18,11 @@ import System.Environment
 import Network.URI.Encode
 import Control.Arrow
 import Data.Ratio
+import Control.Exception
+import Types (Action)
+
+try' :: IO a -> IO (Either SomeException a)
+try' = try
 
 readR :: String -> Ratio Integer
 readR s =
@@ -56,8 +62,11 @@ decS = unpack . decodeUtf8
 withret :: Monad m => (a -> m ()) -> Maybe a -> m ()
 withret = maybe $ return ()
 
-witherr :: MonadIO m => Text -> (t -> ActionCtxT ctx m ()) -> Maybe t -> ActionCtxT ctx m ()
-witherr err f m = case m of
+witherr' :: (b -> Action ()) -> Maybe b -> Action ()
+witherr' = witherr "Erreur"
+
+witherr :: Text -> (b -> Action ()) -> (Maybe b -> Action ())
+witherr err f = \case
     Just x -> f x
     Nothing -> setStatus (Status {statusCode=400, statusMessage=encodeUtf8 err})
 

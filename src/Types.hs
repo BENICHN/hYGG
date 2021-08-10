@@ -149,3 +149,5 @@ instance FromJSON TorrentInfo
 type API = SpockM () () () ()
 
 type APIAction a = SpockAction () () () a
+
+type Action = ActionCtxT () (WebStateM () () ())

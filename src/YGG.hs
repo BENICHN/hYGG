@@ -42,7 +42,7 @@ getFiles c tid = do
       v <- JS.decode res
       parse' (v .: "html")
 
-parseTorrentInfos :: Config -> String -> IO TorrentInfo
+parseTorrentInfos :: Config -> String -> IO (Maybe TorrentInfo)
 parseTorrentInfos c s =
   let tid = read . takeWhile (/='-') . takeWhileEnd (/='/') $ s
       url = hostName c <> "/torrent/" <> s
@@ -50,7 +50,7 @@ parseTorrentInfos c s =
     files <- getFiles c tid
     nfo <- C8.unpack . (^. responseBody) <$> get (hostName c <> "/engine/get_nfo?torrent=" <> show tid)
     let filesarr = ac files >>> readFromString [withParseHTML True] >>> removeAllWhiteSpace
-    head <$> runX (getdoc url >>> selectTI filesarr >>> xunpickleVal (xpTI c nfo url tid))
+    listToMaybe <$> runX (getdoc url >>> selectTI filesarr >>> xunpickleVal (xpTI c nfo url tid))
 
-parseSearchTorrents :: Config -> [(Text, Text)] -> IO SearchResult
-parseSearchTorrents c ps = head <$> runX (getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c))
+parseSearchTorrents :: Config -> [(Text, Text)] -> IO (Maybe SearchResult)
+parseSearchTorrents c ps = listToMaybe <$> runX (getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c))
