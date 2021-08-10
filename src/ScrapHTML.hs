@@ -129,8 +129,8 @@ xpTI c nfo url tid =
     xpSize = xpElem "td" xpText
     xpHash = xpElem "td" xpText
     xpUploader = xpElem "td" $ xpAlt (\case
-      Nothing -> 0
-      Just _ -> 1) [xpWrapU (const Nothing) xpTexts, xpWrapU (\(url, name) -> Just $ Uploader {upurl=url, upname=name}) $ xpAttr1Elem "a" ("href", xpText) xpTexts]
+      Nothing -> 1
+      Just _ -> 0) [xpWrapU (\(url, name) -> Just $ Uploader {upurl=url, upname=name}) $ xpAttr1Elem "a" ("href", xpText) xpTexts, xpWrapU (const Nothing) xpTexts]
     xpDate = xpElem "td" $ xpPair xpText (xpElem "i" xpText)
     xpFile = xpElem "tr" $ xpPair (xpElem' "td" xpText) (xpElem' "td" xpText)
     xpFiles = xpElem' "tbody" $ xpWrapU makefiletree $ xpList xpFile
