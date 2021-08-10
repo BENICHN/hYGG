@@ -39,7 +39,7 @@ ac :: Arrow a => c -> a b c
 ac = arr . const
 
 makeUriQuery :: [(Text, Text)] -> Text
-makeUriQuery params = mconcat . intersperse "&" $ (\(n, v) -> n <> "=" <> encodeText v) <$> params
+makeUriQuery params = mconcat . intersperse "&" $ (\(n, v) -> encodeText n <> "=" <> encodeText v) <$> params
 
 getExecutableDir :: IO FilePath
 getExecutableDir = dropWhileEnd (/='/') <$> getExecutablePath
