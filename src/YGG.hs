@@ -50,7 +50,7 @@ parseTorrentInfos c s =
     files <- getFiles c tid
     nfo <- C8.unpack . (^. responseBody) <$> get (hostName c <> "/engine/get_nfo?torrent=" <> show tid)
     let filesarr = ac files >>> readFromString [withParseHTML True] >>> removeAllWhiteSpace
-    listToMaybe <$> runX (getdoc url >>> selectTI filesarr >>> xunpickleVal (xpTI c nfo url tid))
+    listToMaybe <$> runX (getdoc url >>> selectTI c filesarr >>> xunpickleVal (xpTI c nfo url tid))
 
 parseSearchTorrents :: Config -> [(Text, Text)] -> IO (Maybe SearchResult)
 parseSearchTorrents c ps = listToMaybe <$> runX (getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c))

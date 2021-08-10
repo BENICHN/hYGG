@@ -84,8 +84,11 @@ makefiletree files =
       dirstree = (\(p, f) -> Directory {dirname=p, dircontent=makefiletree f}) <$> dirs
   in dirstree ++ filestree
 
-selectTI :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
-selectTI files =
+translatehrefs :: ArrowXml a => Config -> a XmlTree XmlTree
+translatehrefs c = processTopDownWithAttrl (changeAttrValue (hostName c ++) `when` (isAttr >>> hasName "href"))
+
+selectTI :: ArrowXml a => Config -> a XmlTree XmlTree -> a XmlTree XmlTree
+selectTI c files =
   root
     []
     [
@@ -96,7 +99,7 @@ selectTI files =
                           <+> (getChildreni (== 1) >>> getChildreni (== 1) >>> getChildreni (== 1) /> getChildren /> getChildreni (/= 1) >>> getChildreni (== 1))
                       )) -- Infos
                   <+> (getChildreni (== 1) >>> changeChildreni (== 2)) -- Presentation
-                  <+> (getChildreni (== 3) /> getChildren >>> hasName "ul") -- Comments
+                  <+> (getChildreni (== 3) /> getChildren >>> hasName "ul" >>> translatehrefs c) -- Comments
               ))
           <+> (files /> getChildren) -- Content
           <+> (getChildren >>> hasName "html" /> hasName "head" >>> processChildren (filterA (getName >>> isA (/="script")))) -- Head
@@ -108,7 +111,7 @@ xpTI c nfo url tid =
     let fullpres = runLA $ root [] [ {- mkelem "div" [] [
          mkelem "base" [mkAttr (mkName "href") (ac url >>> mkText)] [],
          ac header >>> getChildren,
-         ac presentation ] -} ac presentation >>> processTopDownWithAttrl (changeAttrValue (hostName c ++) `when` (isAttr >>> hasName "href"))] >>> writeDocumentToString [withOutputHTML]
+         ac presentation ] -} ac presentation >>> translatehrefs c ] >>> writeDocumentToString [withOutputHTML]
         [date, hour] = words . trim $ dh
     in TorrentInfo {baseinfo=TorrentFile {fileinfo=FileInfo {name=name, size=parseSize size}, cat=cat, torurlend = gettorurlend c url, tid=tid, coms=Nothing, age=drop 1 . dropEnd 1 . trim $ age, slc=slc}, hash=hash, content=files, nfo=nfo, uploader=uploader, date=date, hour=hour, presentation=mconcat $ fullpres (), comments=coms}) $
     xp11Tuple
