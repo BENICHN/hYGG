@@ -59,7 +59,7 @@ xpTF c =
           xpElem "tr" $
             xp9Tuple
               (xpElem "td" $ xpFilterCont (hasName "div") $ xpElem' "div" xpRS) -- Section
-              (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) (xps xpText)) -- URL & nom
+              (xpElem' "td" $ xpAttr1Elem "a" ("href", xpText) xpTexts) -- URL & nom
               (xpElem "td" $ xpAttr1 "a" ("target", xpRS)) -- NFO
               (xpElem "td" $ xpFilterCont isText xpRS) -- Comments
               (xpElem "td" $ xpFilterCont isText xpText) -- Age
@@ -124,13 +124,13 @@ xpTI c nfo url tid =
   where
     xpSoLoC = xpElem' "strong" $ xpWrapU (read . filter (/=' ')) xpText
     xpSLC = xpWrapU (\(s, l, c) -> SLC {seeders=s, leechers=l, compl=c}) $ xpTriple xpSoLoC xpSoLoC xpSoLoC
-    xpName = xpElem "td" $ xps xpText
+    xpName = xpElem "td" xpTexts
     xpCat = xpWrapU (readCat . read . takeWhileEnd (/='=')) $ xpElem "td" $ xpAttr1 "a" ("href", xpText)
     xpSize = xpElem "td" xpText
     xpHash = xpElem "td" xpText
     xpUploader = xpElem "td" $ xpAlt (\case
       Nothing -> 0
-      Just _ -> 1) [xpWrapU (const Nothing) xpText, xpWrapU (\(url, name) -> Just $ Uploader {upurl=url, upname=name}) $ xpAttr1Elem "a" ("href", xpText) xpText]
+      Just _ -> 1) [xpWrapU (const Nothing) xpTexts, xpWrapU (\(url, name) -> Just $ Uploader {upurl=url, upname=name}) $ xpAttr1Elem "a" ("href", xpText) xpTexts]
     xpDate = xpElem "td" $ xpPair xpText (xpElem "i" xpText)
     xpFile = xpElem "tr" $ xpPair (xpElem' "td" xpText) (xpElem' "td" xpText)
     xpFiles = xpElem' "tbody" $ xpWrapU makefiletree $ xpList xpFile
@@ -139,9 +139,9 @@ xpTI c nfo url tid =
       Commentary {user=User {userurl=url, avatarurl=avatar, username=name, role=role, upsize=parseSize up, downsize=parseSize down}, comage=age, comcontent=content}) $
       xpFilterCont (changeChildren (take 2)) $ xpElem' "li" $ xpPair
       (xpElem' "div" $ xp4Tuple
-        (xpElem' "a" $ xpAttr1"img" ("src", xpText))
+        (xpElem' "a" $ xpAttr1 "img" ("src", xpText))
         (xpElemWithAttrValue "p" "class" "rang" xpText)
-        (xpElemWithAttrValue "p" "class" "name" $ xpFilterCont (hasName "a") $ xpAttr1Elem "a" ("href", xpText) xpText)
+        (xpElemWithAttrValue "p" "class" "name" $ xpFilterCont (hasName "a") $ xpAttr1Elem "a" ("href", xpText) xpTexts)
         (xpElemWithAttrValue "p" "class" "ratio" $ xpFilterCont (hasName "strong") $ xpPair (xpElemWithAttrValue "strong" "class" "green" xpText) (xpElemWithAttrValue "strong" "class" "red" xpText)))
       (xpElem' "div" $ xpPair
         (xpElem' "div" $ xpFilterCont (processChildren (hasName "strong") >>> getChildren) $ xpElem "strong" xpText)
