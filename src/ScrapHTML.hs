@@ -106,7 +106,9 @@ makefiletree files =
   in dirstree ++ filestree
 
 translatehrefs :: ArrowXml a => Config -> a XmlTree XmlTree
-translatehrefs c = processTopDownWithAttrl (changeAttrValue (hostName c ++) `when` (isAttr >>> hasName "href"))
+translatehrefs c = processTopDownWithAttrl (changeAttrValue (\case
+  s@('/':_) -> hostName c <> s
+  s -> s) `when` (isAttr >>> hasName "href"))
 
 selectTI :: ArrowXml a => Config -> a XmlTree XmlTree -> a XmlTree XmlTree
 selectTI c files =
