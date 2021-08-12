@@ -34,8 +34,8 @@ xpUD :: PU UserData
 xpUD =
   xpElem "div" $
     xpWrapU (\(us, ds, cs) ->
-      let u = parseSize $ trim us
-          d = parseSize $ trim ds
+      let u = parseSize us
+          d = parseSize ds
           r = realToFrac u / realToFrac d
        in UserData {udupsize=u, uddownsize=d, udratio=r, udactivity="green" `isInfixOf` cs}) $
       xpTriple xpText xpText xpText
@@ -44,7 +44,7 @@ xpUD =
 
 parseSize :: String -> Integer
 parseSize s =
-  let (v, u) = span (\c -> isDigit c || c == '.') s
+  let (v, u) = span (\c -> isDigit c || c == '.') $ trim s
       vn = readR v :: Rational
       um = case u of
         "o" -> 1
