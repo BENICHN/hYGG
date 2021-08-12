@@ -20,8 +20,25 @@ import Utils
 import Config
 import Data.Maybe
 
-getdoc :: String -> IOStateArrow () XmlTree XmlTree
-getdoc url = readDocument [withCurl [], withParseHTML True] url >>> removeAllWhiteSpace >>> decodeMails
+getdoc :: Config -> String -> IOStateArrow () XmlTree XmlTree
+getdoc c url = readDocument [withCurl [("-H", "Cookie: ygg_=" <> yggcookie c)], withParseHTML True] url >>> removeAllWhiteSpace >>> decodeMails
+
+{-================================= User =================================-}
+
+selectUserData :: ArrowXml a => a XmlTree XmlTree
+selectUserData = mkelem "div" [] [deep $ hasName "main" /> getChildren >>> getChildreni (==2) /> hasName "table" >>>
+  (    (getChildreni (`elem` [1, 2]) /> hasName "td" /> hasName "strong" /> isText)
+   <+> (getChildreni (==3) /> hasName "td" /> hasName "a" >>> (getAttrValue "class" >>> mkText)) )]
+
+xpUD :: PU UserData
+xpUD =
+  xpElem "div" $
+    xpWrapU (\(us, ds, cs) ->
+      let u = parseSize us
+          d = parseSize ds
+          r = realToFrac u / realToFrac d
+       in UserData {udupsize=u, uddownsize=d, udratio=r, udactivity="green" `isInfixOf` cs}) $
+      xpTriple xpText xpText xpText
 
 {-================================= Search =================================-}
 

@@ -20,6 +20,9 @@ app :: Config -> API
 app c = do
   get "ping" $ decoResp $ text "pong"
   get "config" $ decoResp $ json c
+  get "user" $ decoResp $ liftIO (do
+    connectCookie c
+    liftIO (getUserData c)) >>= witherr' json
   get "search" $ decoResp $ do
     params >>= liftIO . parseSearchTorrents c >>= witherr' json
   get ("torrent" <//> wildcard) $ \s -> decoResp $ liftIO (parseTorrentInfos c $ unpack s) >>= witherr' json

@@ -6,6 +6,7 @@ import Text.XML.HXT.Core
 import Paths_hYGG
 import Config
 import Utils
+import Data.Maybe
 
 c = Config {port=8080, hostName="https://www3.yggtorrent.nz", yggid="", yggpass="", yggcookie=""}
 
@@ -16,9 +17,14 @@ testConfig =
      setDefaultCookie c >>= print
 
 testTI =
-    runX (getdoc exTIurl /> hasName "html" /> hasName "head" /> filterA (getName >>> isA (/="script"))) >>= print
+    runX (getdoc c exTIurl /> hasName "html" /> hasName "head" /> filterA (getName >>> isA (/="script"))) >>= print
 
 testWr =
     runLA $ root [] [mkelem "aah" [] []] >>> writeDocumentToString [withOutputHTML]
 
-main = return ()
+testUD = do
+    connectCookie c
+    r <- runX $ getdoc c (hostName c <> "/user/account") >>> selectUserData >>> xunpickleVal xpTree
+    print r
+
+main = testUD

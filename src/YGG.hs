@@ -28,12 +28,15 @@ yggcookieheader ck = header hCookie .~ ["ygg_=" <> encS ck]
 connectCookie :: Config -> IO (Response ByteString)
 connectCookie c =
   let opts = defaults & yggcookieheader (yggcookie c)
-  in postWith opts (hostName c <> "/user/login") ["id" := yggid c, "pass" := yggpass c]
+   in postWith opts (hostName c <> "/user/login") ["id" := yggid c, "pass" := yggpass c]
+
+getUserData :: Config -> IO (Maybe UserData)
+getUserData c = listToMaybe <$> runX (getdoc c (hostName c <> "/user/account") >>> selectUserData >>> xunpickleVal xpUD)
 
 dltorrent :: Config -> Int -> IO ByteString
 dltorrent c tid =
   let opts = defaults & yggcookieheader (yggcookie c)
-  in (^. responseBody) <$> getWith opts (hostName c <> "/engine/download_torrent?id=" <> show tid)
+   in (^. responseBody) <$> getWith opts (hostName c <> "/engine/download_torrent?id=" <> show tid)
 
 getFiles :: Config -> Int -> IO String
 getFiles c tid = do
@@ -46,11 +49,11 @@ parseTorrentInfos :: Config -> String -> IO (Maybe TorrentInfo)
 parseTorrentInfos c s =
   let tid = read . takeWhile (/='-') . takeWhileEnd (/='/') $ s
       url = hostName c <> "/torrent/" <> s
-  in do
+   in do
     files <- getFiles c tid
     nfo <- C8.unpack . (^. responseBody) <$> get (hostName c <> "/engine/get_nfo?torrent=" <> show tid)
     let filesarr = ac files >>> readFromString [withParseHTML True] >>> removeAllWhiteSpace
-    listToMaybe <$> runX (getdoc url >>> selectTI c filesarr >>> xunpickleVal (xpTI c nfo url tid))
+    listToMaybe <$> runX (getdoc c url >>> selectTI c filesarr >>> xunpickleVal (xpTI c nfo url tid))
 
 parseSearchTorrents :: Config -> [(Text, Text)] -> IO (Maybe SearchResult)
-parseSearchTorrents c ps = listToMaybe <$> runX (getdoc (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c))
+parseSearchTorrents c ps = listToMaybe <$> runX (getdoc c (hostName c <> "/engine/search?" <> unpack (makeUriQuery ps)) >>> selectResultsTable >>> xunpickleVal (xpTF c))

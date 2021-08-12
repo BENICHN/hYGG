@@ -125,6 +125,13 @@ data SearchResult = SearchResult {
   searchResults :: [TorrentFile] }
   deriving (Generic, Eq, Ord, Show)
 
+data UserData = UserData {
+  udupsize :: Integer,
+  uddownsize :: Integer,
+  udratio :: Double,
+  udactivity :: Bool }
+  deriving (Generic, Eq, Ord, Show)
+
 instance ToJSON TorCat
 instance FromJSON TorCat
 instance ToJSON SLC
@@ -145,6 +152,8 @@ instance ToJSON SearchResult
 instance FromJSON SearchResult
 instance ToJSON TorrentInfo
 instance FromJSON TorrentInfo
+instance ToJSON UserData
+instance FromJSON UserData
 
 type API = SpockM () () () ()
 
