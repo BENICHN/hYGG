@@ -34,8 +34,8 @@ xpUD :: PU UserData
 xpUD =
   xpElem "div" $
     xpWrapU (\(us, ds, cs) ->
-      let u = parseSize us
-          d = parseSize ds
+      let u = parseSize $ trim us
+          d = parseSize $ trim ds
           r = realToFrac u / realToFrac d
        in UserData {udupsize=u, uddownsize=d, udratio=r, udactivity="green" `isInfixOf` cs}) $
       xpTriple xpText xpText xpText
