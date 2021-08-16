@@ -29,7 +29,6 @@ dependencies:
 - hxt-curl
 - extra
 - uri-encode
-- parallel-io
 - time
 - network-uri
 - lens

@@ -39,13 +39,6 @@ packages:
       sha256: 1920790535af832b76e7583c33ecf51f8b0b0c3615ef1db1c8ed9be19622c1db
   original:
     hackage: stm-hamt-1.2.0.6
-- completed:
-    hackage: parallel-io-0.3.5@sha256:97db32eb84b3141f4957f6d208c0ef8adce647cbf68099417e93c7d9a45f9b35,3482
-    pantry-tree:
-      size: 706
-      sha256: 9c81a6a331620aca19c7f8cfb88df2a9584346820687d75147b2a7bab87e112b
-  original:
-    hackage: parallel-io-0.3.5
 snapshots:
 - completed:
     size: 585603

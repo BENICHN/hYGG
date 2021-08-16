@@ -41,7 +41,6 @@ extra-deps:
 - reroute-0.6.0.0
 - stm-containers-1.2
 - stm-hamt-1.2.0.6
-- parallel-io-0.3.5
 
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
