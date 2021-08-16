@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 
 module API where
 
@@ -13,20 +14,22 @@ import Network.Wai
 import Config
 import Web.Spock.Config
 
-decoResp :: Action b -> Action b
-decoResp = (setHeader "Access-Control-Allow-Origin" "*" >>)
-
 app :: Config -> API
 app c = do
-  get "ping" $ decoResp $ text "pong"
-  get "config" $ decoResp $ json c
-  get "user" $ decoResp $ liftIO (do
+  -- hookRoute OPTIONS wildcard \_ -> do
+  --   setHeader "Access-Control-Allow-Origin" "*"
+  --   setHeader "Access-Control-Allow-Headers" "*"
+  --   setHeader "Allow" "GET"
+  --   text ""
+  get "ping" $ text "pong"
+  get "config" $ json c
+  get "user" $ liftIO (do
     connectCookie c
     liftIO (getUserData c)) >>= witherr' json
-  get "search" $ decoResp $ do
+  get "search" do
     params >>= liftIO . parseSearchTorrents c >>= witherr' json
-  get ("torrent" <//> wildcard) $ \s -> decoResp $ liftIO (parseTorrentInfos c $ unpack s) >>= witherr' json
-  get ("dl" <//> var) $ \stid -> decoResp $ do
+  get ("torrent" <//> wildcard) $ \s -> liftIO (parseTorrentInfos c $ unpack s) >>= witherr' json
+  get ("dl" <//> var) $ \stid -> do
     lbs <- liftIO $ do
       connectCookie c
       dltorrent c (read stid)
