@@ -27,10 +27,11 @@ try' = try
 readR :: String -> Ratio Integer
 readR s =
   let (i, d) = break (=='.') s
+      ii = if null i then 0 else read i
       dd = drop 1 d
       dn = if null dd then 1 else read dd
       m = 10 ^ length dd
-   in (read i * m + dn) % m
+   in (ii * m + dn) % m
 
 xps :: Monoid m => PU m -> PU m
 xps pu = xpWrap (mconcat, (:[])) $ xpList pu

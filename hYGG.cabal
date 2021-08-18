@@ -30,6 +30,7 @@ library
   exposed-modules:
       API
       Config
+      FileTree
       ScrapHTML
       Types
       Utils

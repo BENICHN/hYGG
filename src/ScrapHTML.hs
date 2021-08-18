@@ -19,6 +19,7 @@ import Types
 import Utils
 import Config
 import Data.Maybe
+import FileTree
 
 getdoc :: Config -> String -> IOStateArrow () XmlTree XmlTree
 getdoc c url = readDocument [withCurl [("-H", "Cookie: ygg_=" <> yggcookie c)], withParseHTML True] url >>> removeAllWhiteSpace >>> decodeMails
@@ -96,15 +97,6 @@ xpTF c =
 gettorurlend :: Config -> String -> String
 gettorurlend c = drop $ length (hostName c)
 
-makefiletree :: [(String, FilePath)] -> [FileTree]
-makefiletree files =
-  let psfiles = second (break (=='/')) <$> files
-      (psfilesf, psfilesd) = partition (null . snd . snd) psfiles
-      dirs = (\files@((_, (p, _)):_) -> (p, (\(size, (_, s)) -> (size, tail s)) <$> files)) <$> groupBy' (fst . snd) psfilesd
-      filestree = (\(size, (name, _)) -> File $ FileInfo {name=name, size=parseSize size}) <$> psfilesf
-      dirstree = (\(p, f) -> Directory {dirname=p, dircontent=makefiletree f}) <$> dirs
-  in dirstree ++ filestree
-
 translatehrefs :: ArrowXml a => Config -> a XmlTree XmlTree
 translatehrefs c = processTopDownWithAttrl (changeAttrValue (\case
   s@('/':_) -> hostName c <> s
@@ -160,8 +152,8 @@ xpTI c nfo url tid =
       Nothing -> 1
       Just _ -> 0) [xpWrapU (\(url, name) -> Just $ Uploader {upurl=url, upname=name}) $ xpAttr1Elem "a" ("href", xpText) xpTexts, xpWrapU (const Nothing) xpTexts]
     xpDate = xpElem "td" $ xpPair xpText (xpElem "i" xpText)
-    xpFile = xpElem "tr" $ xpPair (xpElem' "td" xpText) (xpElem' "td" xpText)
-    xpFiles = xpElem' "tbody" $ xpWrapU makefiletree $ xpList xpFile
+    xpFile = xpElem "tr" $ xpWrapU (\(s, n) -> File {filename=n, filedetails=parseSize s}) $ xpPair (xpElem' "td" xpText) (xpElem' "td" xpText)
+    xpFiles = xpElem' "tbody" $ xpWrapU buildFileTree $ xpList xpFile
     xpPres = xpElem' "section" xpTree
     xpCom = xpWrapU (\((avatar, role, (url, name), (up, down)), (age, content)) ->
       Commentary {user=User {userurl=url, avatarurl=avatar, username=name, role=role, upsize=parseSize up, downsize=parseSize down}, comage=age, comcontent=content}) $

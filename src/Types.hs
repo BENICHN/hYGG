@@ -7,6 +7,7 @@ import Data.Aeson
 import Data.Text (Text, pack)
 import GHC.Generics
 import Web.Spock
+import FileTree
 
 data TorCat =
     Karaoke -- 2147
@@ -67,11 +68,6 @@ data SLC = SLC {
   leechers :: Int,
   compl :: Int }
   deriving (Generic, Eq, Ord, Show)
-
-data FileTree = File FileInfo | Directory {
-  dirname :: String,
-  dircontent :: [FileTree] }
-  deriving (Generic, Eq, Ord, Show)
   
 data FileInfo = FileInfo {
   name :: String,
@@ -96,7 +92,7 @@ data Uploader = Uploader {
 data TorrentInfo = TorrentInfo {
   baseinfo :: TorrentFile,
   hash :: String,
-  content :: [FileTree],
+  content :: FileTree Integer,
   nfo :: String,
   uploader :: Maybe Uploader,
   date :: String,
@@ -144,8 +140,6 @@ instance ToJSON Commentary
 instance FromJSON Commentary
 instance ToJSON FileInfo
 instance FromJSON FileInfo
-instance ToJSON FileTree
-instance FromJSON FileTree
 instance ToJSON TorrentFile
 instance FromJSON TorrentFile
 instance ToJSON SearchResult
